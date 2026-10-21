@@ -77,6 +77,15 @@ textarea.out{width:100%;min-height:80px;font-family:ui-monospace,Menlo,Consolas,
 .tree-node .tree-actions button{font-size:10px;padding:2px 5px;line-height:1.3}
 .tree-node .tree-toggle{border:0!important;padding:0!important;min-width:15px;width:15px;height:17px;display:inline-flex;align-items:center;justify-content:center;background:transparent!important;color:var(--text-2);font-size:13px;flex-shrink:0}
 .tree-node .tree-toggle:disabled{opacity:.35}
+/* 요소 목록 순서/소속 이동: 드롭 위치를 한 줄에만 표시해 화면을 복잡하게 만들지 않습니다. */
+.tree-node[draggable="true"]{cursor:grab;position:relative;user-select:none}
+.tree-node.tree-dragging{opacity:.42}
+.tree-node.tree-drop-before{box-shadow:inset 0 3px 0 var(--accent,#bb78a6);border-radius:2px}
+.tree-node.tree-drop-after{box-shadow:inset 0 -3px 0 var(--accent,#bb78a6);border-radius:2px}
+.tree-node.tree-drop-inside{outline:2px dashed var(--accent,#bb78a6);outline-offset:-2px;background:var(--accent-bg)}
+#tree.tree-drop-root{box-shadow:inset 0 -3px 0 var(--accent,#bb78a6)}
+.tree-node .tree-grip{font-size:12px;color:var(--text-3);letter-spacing:-3px;width:10px;flex-shrink:0;cursor:grab}
+.tree-node .tree-actions button{cursor:pointer}
 
 .canvas-settings{background:var(--bg-elem);border:1px solid var(--border);border-radius:9px;padding:12px;display:flex;flex-direction:column;gap:8px}
 .canvas-settings .row{margin:0}
@@ -283,6 +292,10 @@ textarea.out{width:100%;min-height:80px;font-family:ui-monospace,Menlo,Consolas,
 #canvas.multi-select-active .rwrap > .rresize-handle,
 #canvas.multi-select-active .rwrap > .node-more {pointer-events:none;display:none!important;}
 #canvas .selection-marquee {position:absolute;pointer-events:none;z-index:9998;border:1.5px solid #9d639a;background:rgba(198,137,176,.16);border-radius:2px;box-shadow:inset 0 0 0 1px #ffffff55;}
+/* 9.33: 캔버스 바깥 회색 작업공간에서도 범위 선택을 시작할 수 있습니다. */
+.selection-marquee.atelier-floating-marquee{position:fixed;pointer-events:none;z-index:9998;border:1.5px solid #9d639a;background:rgba(198,137,176,.16);border-radius:2px;box-shadow:inset 0 0 0 1px #ffffff55;box-sizing:border-box}
+.canvas-outer.marquee-select-active{cursor:crosshair;touch-action:none}
+
 .tree-node.multi-tree-sel{background:var(--accent-bg);box-shadow:inset 3px 0 #8f82cc;}
 .multi-tools {padding:10px 12px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:7px;align-items:center;background:var(--accent-bg)}
 .multi-tools .multi-count{font-size:11px;font-weight:600;color:var(--accent-text);margin-right:auto}
@@ -326,6 +339,10 @@ textarea.out{width:100%;min-height:80px;font-family:ui-monospace,Menlo,Consolas,
 .rotation-panel .rotate-input{width:70px!important;flex:none!important;text-align:right;}
 .rotation-panel button{white-space:nowrap;}
 
+/* 9.32: 다중 선택 모드에서는 기존 박스 위에서도 영역 선택을 시작할 수 있어요. */
+#canvas.marquee-select-mode{cursor:crosshair;touch-action:none}
+#canvas.marquee-select-mode .rbox,#canvas.marquee-select-mode .rbox *{cursor:crosshair!important}
+#canvas.marquee-select-mode .rresize-handle,#canvas.marquee-select-mode .rrotate-handle,#canvas.marquee-select-mode .node-more{pointer-events:none!important;display:none!important}
 /* 8차: PPT식 자석 정렬선과 다중 선택 정렬/균등 간격. 편집기 안에서만 표시됩니다. */
 #canvas .atelier-snap-guide {position:absolute;pointer-events:none;z-index:9996;background:#e35a9a;box-shadow:0 0 0 1px #fff9;}
 #canvas .atelier-snap-guide.vertical {width:1.5px;}
@@ -1152,7 +1169,7 @@ body.library-resizing{cursor:col-resize!important;user-select:none!important;-we
     <div class="toolbar">
       <button type="button" class="mini ui-help-dot toolbar-help" title="빈 공간 드래그: 여러 요소 선택 · ⟳: 회전 · 글씨 더블클릭: 편집 · Ctrl+Shift+C/V: 서식 복사/붙여넣기" aria-label="캔버스 조작 도움말" onclick="this.classList.toggle('help-open')">ⓘ<span class="ui-help-pop">빈 공간 드래그: 여러 요소 선택 · ⟳: 회전 · 글씨 더블클릭: 편집 · Ctrl+Shift+C/V: 서식 복사/붙여넣기</span></button>
       <button id="snap-toggle" class="mini" onclick="toggleSnapGuide()" aria-pressed="true" title="이동 중 가장자리·중앙에 자동 정렬 (Alt를 누르면 일시 해제)">⊞ 자석 정렬 ON</button>
-      <button id="multi-pick-btn" class="mini" onclick="toggleMultiPick()" title="켜면 여러 요소를 차례로 눌러 선택해요 (터치 화면에서도 가능)">▧ 다중 선택</button>
+      <button id="multi-pick-btn" class="mini" onclick="toggleMultiPick()" title="회색 작업 공간에서도 드래그해 여러 요소 선택 · 박스 위에서 시작하려면 모드 켜기 (Shift: 추가 선택)">▧ 다중 선택</button>
       <button class="mini" onclick="selectAllCanvas()" title="모든 최상위 요소 선택 (Ctrl+A)">전체 선택</button>
       <button onclick="togglePreviewDark()" class="mini" id="prev-dark-btn" title="투명한 작업 배경을 다른 색상으로 확인해요">배경 대비</button>
       <button onclick="duplicateSel()" class="icon" title="복제" id="dup-btn"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
@@ -1472,6 +1489,8 @@ function effectiveRoots(ids,skipLocked){
 function syncSelectionUI(){
   reconcileSelection();const ids=selectedIds,cv=document.getElementById('canvas');if(!cv)return;
   cv.classList.toggle('multi-select-active',ids.size>1);
+  cv.classList.toggle('marquee-select-mode',multiPickMode);
+  document.querySelector('.canvas-outer')?.classList.toggle('marquee-select-active',multiPickMode);
   cv.querySelectorAll('.rwrap[data-node-id]').forEach(w=>{
     const yes=ids.has(Number(w.dataset.nodeId));
     w.classList.toggle('sel-outline',yes);
@@ -1498,7 +1517,7 @@ function toggleSnapGuide(){
   if(btn){btn.textContent=snapEnabled?'⊞ 자석 정렬 ON':'⊞ 자석 정렬 OFF';btn.classList.toggle('is-off',!snapEnabled);btn.setAttribute('aria-pressed',String(snapEnabled));}
   clearSnapGuides();toast(snapEnabled?'자석 정렬 켜짐 · Alt를 누른 채 끌면 일시 해제':'자석 정렬 꺼짐');
 }
-function toggleMultiPick(){multiPickMode=!multiPickMode;syncSelectionUI();toast(multiPickMode?'다중 선택 켜짐 · 여러 요소를 눌러 선택하세요':'다중 선택 꺼짐');}
+function toggleMultiPick(){multiPickMode=!multiPickMode;syncSelectionUI();toast(multiPickMode?'다중 선택 켜짐 · 클릭 또는 드래그로 여러 요소 선택':'다중 선택 꺼짐 · 요소 드래그로 이동');}
 function renderAll(){reconcileSelection();renderCanvasSettings();renderCanvas();syncSelectionUI();renderTree();renderProps();updateOutput();saveState();updateButtons();}
 function updateButtons(){document.getElementById('dup-btn').disabled=!sel;}
 
@@ -2056,6 +2075,7 @@ document.addEventListener('mouseup',function(){
 });
 // 캔버스 클릭은 DOM 재생성을 하지 않아 더블클릭 인식이 끊기지 않는다.
 function selectCanvasNode(id,wrap,event){
+  if(performance.now()<ignoreCanvasClickUntil)return;
   if(activeTextEdit)finishInlineTextEdit(true);
   const add=!!(event&&(event.shiftKey||event.ctrlKey||event.metaKey||multiPickMode));
   if(add){const ids=new Set(liveSelection());if(ids.has(id))ids.delete(id);else ids.add(id);setSelection([...ids],ids.has(id)?id:null);}
@@ -2285,57 +2305,63 @@ function finishSurfaceMove(e){
 document.addEventListener('pointerup',finishSurfaceMove);
 document.addEventListener('pointercancel',finishSurfaceMove);
 
-// PPT-like rectangular marquee. Start from empty canvas; Alt+drag also works over a box.
-function marqueeCoordinates(e){
-  const r=document.getElementById('canvas').getBoundingClientRect();
-  return{x:e.clientX-r.left,y:e.clientY-r.top};
-}
+// PPT-like rectangular marquee. The gray work area is part of the selection surface.
+// The selection rectangle uses viewport coordinates, so dragging from outside the
+// white canvas stays visible and can intersect the canvas in either direction.
 (function setupMarquee(){
   const cv=document.getElementById('canvas');
-  cv.addEventListener('pointerdown',e=>{
-    if(e.button!==0||e.pointerType==='touch'||activeTextEdit)return;
-    // The wrapper can span the whole row even when the visible badge is tiny.
-    // Its transparent area must count as empty canvas for marquee selection.
+  const outer=document.querySelector('.canvas-outer');
+  if(!cv||!outer)return;
+  outer.addEventListener('pointerdown',e=>{
+    if(e.button!==0||activeTextEdit||marqueeDrag||document.body.classList.contains('regex-picking'))return;
+    // Keep normal one-finger scrolling, except in explicit multiple-selection mode.
+    if(e.pointerType==='touch'&&!multiPickMode)return;
+    if(e.target.closest('button,input,textarea,select,a,summary,iframe,[contenteditable="true"],.rresize-handle,.rrotate-handle,.node-more'))return;
+    const insideCanvas=cv.contains(e.target);
     const blank=!e.target.closest('.rbox,.node-more,.rresize-handle,.rrotate-handle');
-    if(!blank&&!e.altKey)return;
-    if(e.target.closest('button,input,textarea,select,[contenteditable="true"]'))return;
-    e.preventDefault();closeColorPop();
-    const p=marqueeCoordinates(e);
-    const el=document.createElement('div');el.className='selection-marquee';el.style.cssText+='left:'+p.x+'px;top:'+p.y+'px;width:0;height:0';cv.appendChild(el);
-    marqueeDrag={pointerId:e.pointerId,origin:p,x:p.x,y:p.y,overlay:el,add:!!e.shiftKey,initial:e.shiftKey?liveSelection():[],moving:false};
+    // A normal drag from a shape moves the shape; from the gray margins (or
+    // empty canvas) it creates a marquee, like the PowerPoint slide workspace.
+    if(insideCanvas&&!blank&&!multiPickMode&&!e.altKey&&!e.shiftKey)return;
+    e.preventDefault();closeColorPop();surfaceDrag=null;
+    const origin={x:e.clientX,y:e.clientY};
+    const el=document.createElement('div');
+    el.className='selection-marquee atelier-floating-marquee';
+    el.setAttribute('aria-hidden','true');
+    Object.assign(el.style,{left:origin.x+'px',top:origin.y+'px',width:'0px',height:'0px'});
+    document.body.appendChild(el);
+    marqueeDrag={pointerId:e.pointerId,origin,x:origin.x,y:origin.y,overlay:el,add:!!e.shiftKey,initial:e.shiftKey?liveSelection():[],moving:false};
   });
   document.addEventListener('pointermove',e=>{
     const d=marqueeDrag;if(!d||e.pointerId!==d.pointerId)return;
-    const p=marqueeCoordinates(e);d.x=p.x;d.y=p.y;
-    if(Math.hypot(p.x-d.origin.x,p.y-d.origin.y)>5)d.moving=true;
+    d.x=e.clientX;d.y=e.clientY;
+    if(Math.hypot(d.x-d.origin.x,d.y-d.origin.y)>5)d.moving=true;
     if(!d.moving)return;
     e.preventDefault();
-    const left=Math.min(d.origin.x,p.x),top=Math.min(d.origin.y,p.y);
-    Object.assign(d.overlay.style,{left:left+'px',top:top+'px',width:Math.abs(p.x-d.origin.x)+'px',height:Math.abs(p.y-d.origin.y)+'px'});
+    Object.assign(d.overlay.style,{left:Math.min(d.origin.x,d.x)+'px',top:Math.min(d.origin.y,d.y)+'px',width:Math.abs(d.x-d.origin.x)+'px',height:Math.abs(d.y-d.origin.y)+'px'});
   },{passive:false});
-  function finish(e){
+  function finish(e,cancelled=false){
     const d=marqueeDrag;if(!d||(e&&e.pointerId!==d.pointerId))return;
-    marqueeDrag=null;d.overlay.remove();if(!d.moving)return;
-    ignoreCanvasClickUntil=performance.now()+120;
-    const cvRect=cv.getBoundingClientRect();
-    const left=cvRect.left+Math.min(d.origin.x,d.x),right=cvRect.left+Math.max(d.origin.x,d.x);
-    const top=cvRect.top+Math.min(d.origin.y,d.y),bottom=cvRect.top+Math.max(d.origin.y,d.y);
+    marqueeDrag=null;d.overlay.remove();if(cancelled||!d.moving)return;
+    ignoreCanvasClickUntil=performance.now()+320;
+    const left=Math.min(d.origin.x,d.x),right=Math.max(d.origin.x,d.x);
+    const top=Math.min(d.origin.y,d.y),bottom=Math.max(d.origin.y,d.y);
     const found=[];
     cv.querySelectorAll('.rwrap[data-node-id]').forEach(el=>{
       if(el.closest('.rwrap[data-node-id]')!==el)return;
-      // Test the visible shape, not .rwrap: an inline badge's wrapper may
-      // stretch across the parent row, making it impossible to fully enclose.
-      const shape=el.querySelector(':scope > .rbox') || el;
+      // Calculate intersection against the visible element, not its oversized
+      // wrapper; a partially intersecting badge/text still counts.
+      const shape=el.querySelector(':scope > .rbox')||el;
       const r=shape.getBoundingClientRect();
-      // Select shapes fully enclosed by the marquee, as PowerPoint normally does.
-      if(r.width>0&&r.height>0&&r.left>=left-2&&r.right<=right+2&&r.top>=top-2&&r.bottom<=bottom+2)
-        found.push(Number(el.dataset.nodeId));
+      const overlapW=Math.min(r.right,right)-Math.max(r.left,left);
+      const overlapH=Math.min(r.bottom,bottom)-Math.max(r.top,top);
+      if(r.width>0&&r.height>0&&overlapW>2&&overlapH>2)found.push(Number(el.dataset.nodeId));
     });
     const ids=d.add?[...new Set([...d.initial,...found])]:found;
     setSelection(ids,ids[0]||null);
   }
-  document.addEventListener('pointerup',finish);
-  document.addEventListener('pointercancel',finish);
+  document.addEventListener('pointerup',e=>finish(e));
+  document.addEventListener('pointercancel',e=>finish(e,true));
+  window.addEventListener('blur',()=>{if(marqueeDrag){marqueeDrag.overlay.remove();marqueeDrag=null;}});
 })();
 
 function renderCanvas(){
@@ -2380,26 +2406,111 @@ function renameNode(id){
 }
 const collapsedTreeNodes=new Set();
 function toggleTreeCollapsed(id){if(collapsedTreeNodes.has(id))collapsedTreeNodes.delete(id);else collapsedTreeNodes.add(id);renderTree();}
+// 트리에서도 PPT의 개체 목록처럼 요소를 끌어 앞·뒤·컨테이너 안으로 이동합니다.
+let treeDraggingId=null;
+function treeDropClear(){
+ document.querySelectorAll('#tree .tree-drop-before,#tree .tree-drop-after,#tree .tree-drop-inside,#tree .tree-dragging').forEach(el=>el.classList.remove('tree-drop-before','tree-drop-after','tree-drop-inside','tree-dragging'));
+ document.getElementById('tree')?.classList.remove('tree-drop-root');
+}
+function treeDropHasAncestor(id,maybeAncestor){
+ let parent=findParent(id);
+ while(parent){if(parent.id===maybeAncestor)return true;parent=findParent(parent.id);}
+ return false;
+}
+function treeDropAllowed(fromId,toId,where){
+ const from=findNode(fromId),to=toId?findNode(toId):null;
+ if(!from||from.locked||fromId===toId)return false;
+ const origin=findParent(fromId);
+ // 상호작용 장면들은 옵션 텍스트와 순서가 연결되어 있어서 따로 떼어내지 않습니다.
+ if(origin?.type==='switcher')return false;
+ if(toId&&(!to||treeDropHasAncestor(toId,fromId)))return false;
+ if(where==='inside')return !!to&&!!to.children&&to.type!=='switcher'&&!to.locked;
+ if(where==='root')return true;
+ if(where!=='before'&&where!=='after')return false;
+ return !to.locked&&findParent(toId)?.type!=='switcher';
+}
+function treeDropPosition(row,clientY){
+ const r=row.getBoundingClientRect(),f=(clientY-r.top)/Math.max(1,r.height);
+ const id=Number(row.dataset.nodeId),n=findNode(id);
+ if(n?.children&&n.type!=='switcher'&&f>=0.30&&f<=0.70)return 'inside';
+ return f<.5?'before':'after';
+}
+function treeDropPaint(row,where){
+ treeDropClear();
+ if(row)row.classList.add('tree-drop-'+where);
+ else document.getElementById('tree')?.classList.add('tree-drop-root');
+}
+function treeDropCommit(fromId,toId,where){
+ if(!treeDropAllowed(fromId,toId,where))return false;
+ const source=findNode(fromId),sourceSiblings=getSiblings(fromId);
+ let targetSiblings,index;
+ if(where==='root'){targetSiblings=tree;index=tree.length;}
+ else if(where==='inside'){targetSiblings=findNode(toId).children;index=targetSiblings.length;}
+ else{targetSiblings=getSiblings(toId);index=targetSiblings.findIndex(n=>n.id===toId)+(where==='after'?1:0);}
+ const previous=sourceSiblings.indexOf(source);
+ if(previous<0||index<0)return false;
+ if(sourceSiblings===targetSiblings&&previous<index)index--;
+ if(sourceSiblings===targetSiblings&&previous===index)return false;
+ pushUndo();sourceSiblings.splice(previous,1);targetSiblings.splice(index,0,source);
+ if(where==='inside'){collapsedTreeNodes.delete(toId);if(findNode(toId)?.type==='details')detailsEditingOpen.set(toId,true);}
+ let p=findParent(fromId);
+ while(p){if(p.type==='details')detailsEditingOpen.set(p.id,true);p=findParent(p.id);}
+ selectedIds.clear();sel=fromId;
+ renderAll();toast(where==='inside'?'박스 안으로 이동했어요':'요소 순서를 변경했어요');return true;
+}
+function treeAttachDrag(row,n){
+ row.draggable=true;row.dataset.nodeId=String(n.id);
+ row.title='끌어서 순서 변경 · 박스 중앙에 놓으면 안쪽으로 이동';
+ row.addEventListener('dragstart',e=>{
+   if(e.target.closest('button')){e.preventDefault();return;}
+   if(findParent(n.id)?.type==='switcher'||n.locked){e.preventDefault();toast('이 요소는 목록에서 직접 이동할 수 없어요');return;}
+   treeDraggingId=n.id;
+   e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(n.id));
+   row.classList.add('tree-dragging');
+ });
+ row.addEventListener('dragover',e=>{
+   if(!treeDraggingId)return;
+   e.stopPropagation();
+   const where=treeDropPosition(row,e.clientY);
+   if(!treeDropAllowed(treeDraggingId,n.id,where)){treeDropClear();return;}
+   e.preventDefault();e.dataTransfer.dropEffect='move';treeDropPaint(row,where);
+ });
+ row.addEventListener('drop',e=>{
+   e.stopPropagation();if(!treeDraggingId)return;
+   e.preventDefault();const from=treeDraggingId,to=n.id,where=treeDropPosition(row,e.clientY);
+   treeDraggingId=null;treeDropClear();treeDropCommit(from,to,where);
+ });
+ row.addEventListener('dragend',()=>{treeDraggingId=null;treeDropClear();});
+}
 function renderTree(){
  const t=document.getElementById('tree');t.innerHTML='';
+ t.ondragover=e=>{if(!treeDraggingId||e.target.closest('.tree-node'))return;if(!treeDropAllowed(treeDraggingId,null,'root'))return;e.preventDefault();e.dataTransfer.dropEffect='move';treeDropPaint(null,'root');};
+ t.ondrop=e=>{if(!treeDraggingId||e.target.closest('.tree-node'))return;e.preventDefault();const from=treeDraggingId;treeDraggingId=null;treeDropClear();treeDropCommit(from,null,'root');};
  if(tree.length===0){t.innerHTML='<div class="hint">아직 요소가 없습니다.</div>';return;}
  function walk(list,depth){list.forEach(function(n){
   const div=document.createElement('div');div.className='tree-node'+(liveSelection().includes(n.id)?' multi-tree-sel':'')+(sel===n.id?' sel':'');div.style.marginLeft=(depth*13)+'px';if(depth)div.style.borderLeft='2px solid var(--border-2)';
   const main=document.createElement('span');main.className='tree-main';main.innerHTML=icon(n.type)+' '+esc(friendlyNodeName(n))+(n.children?' ('+n.children.length+')':'');main.title='더블클릭하면 이름을 바꿀 수 있어요';main.onclick=function(e){e.stopPropagation();selectCanvasNode(n.id,null,e);};main.ondblclick=function(e){e.stopPropagation();renameNode(n.id);};
   const actions=document.createElement('span');actions.className='tree-actions';
   const idx=list.indexOf(n);
-  for(const [delta,label] of [[-1,'↑'],[1,'↓']]){const b=document.createElement('button');b.textContent=label;b.title='HTML 순서 '+(delta<0?'앞으로':'뒤로');b.disabled=delta<0?idx===0:idx===list.length-1;b.onclick=function(e){e.stopPropagation();moveOrder(n.id,delta);};actions.appendChild(b);}
+  for(const [delta,label] of [[-1,'↑'],[1,'↓']]){const b=document.createElement('button');b.draggable=false;b.textContent=label;b.title='HTML 순서 '+(delta<0?'앞으로':'뒤로');b.disabled=delta<0?idx===0:idx===list.length-1;b.onclick=function(e){e.stopPropagation();moveOrder(n.id,delta);};actions.appendChild(b);}
   const toggle=document.createElement('button');toggle.type='button';toggle.className='tree-toggle';
   const hasChildren=!!(n.children||n.type==='preserved');
   toggle.textContent=hasChildren?(collapsedTreeNodes.has(n.id)?'▸':'▾'):'·';
   toggle.disabled=!hasChildren;toggle.title='자식 요소 접기/펼치기';
   toggle.onclick=function(e){e.stopPropagation();toggleTreeCollapsed(n.id);};
-  div.appendChild(toggle);div.appendChild(main);div.appendChild(actions);div.onclick=function(e){selectCanvasNode(n.id,null,e);};t.appendChild(div);
+  const grip=document.createElement('span');grip.className='tree-grip';grip.textContent='⠿';grip.title='끌어서 옮기기';grip.setAttribute('aria-hidden','true');
+  div.appendChild(toggle);div.appendChild(grip);div.appendChild(main);div.appendChild(actions);
+  treeAttachDrag(div,n);
+  div.onclick=function(e){selectCanvasNode(n.id,null,e);};t.appendChild(div);
   if(!collapsedTreeNodes.has(n.id)){
   if(n.type==='preserved')appendPreservedTree(n,depth+1,t);
   if(n.children)walk(n.children,depth+1);
   }
  });}walk(tree,0);
+ const tail=document.createElement('div');tail.className='tree-drop-tail';tail.style.cssText='height:14px;';tail.title='끝으로 이동';
+ tail.addEventListener('dragover',e=>{if(!treeDraggingId||!treeDropAllowed(treeDraggingId,null,'root'))return;e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect='move';treeDropPaint(null,'root');});
+ tail.addEventListener('drop',e=>{if(!treeDraggingId)return;e.preventDefault();e.stopPropagation();const from=treeDraggingId;treeDraggingId=null;treeDropClear();treeDropCommit(from,null,'root');});
+ t.appendChild(tail);
 }
 
 function numRow(label,id,key,min,max,step){const n=findNode(id);const v=n[key];return '<div class="row"><span class="lab">'+label+'</span><input type="range" min="'+min+'" max="'+max+'" step="'+(step||1)+'" value="'+v+'" oninput="setP('+id+',\''+key+'\',parseFloat(this.value),true);document.getElementById(\'n_'+key+'_'+id+'\').value=this.value"><input type="text" class="num" id="n_'+key+'_'+id+'" value="'+v+'" onchange="setNum('+id+',\''+key+'\',this.value)"></div>';}
@@ -5358,7 +5469,11 @@ document.addEventListener('keydown',function(e){
   const t=e.target,tag=t&&t.tagName;
   const typing=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(t&&t.isContentEditable);
   // 대화 상자와 텍스트 입력 중에는 기본 클립보드/방향키 동작을 보존합니다.
-  if(typing||document.querySelector('.import-overlay,.library-dialog,[role="dialog"]'))return;
+  // 닫혀 있는 모달은 항상 DOM에 존재해도 단축키를 막으면 안 됩니다.
+  // 실제로 보이는 대화 상자와 입력 중인 컨트롤에서만 기본 키 동작을 보존합니다.
+  const dialogOpen=[...document.querySelectorAll('.import-overlay,.library-dialog,[role="dialog"]')]
+    .some(el=>!el.hidden&&el.getClientRects().length>0&&getComputedStyle(el).visibility!=='hidden');
+  if(typing||dialogOpen)return;
   if(ctrl&&e.shiftKey&&!e.altKey&&(e.key==='c'||e.key==='C')){e.preventDefault();copyFormat();return;}
   if(ctrl&&e.shiftKey&&!e.altKey&&(e.key==='v'||e.key==='V')){e.preventDefault();pasteFormat();return;}
   if(ctrl&&!e.altKey&&!e.shiftKey&&(e.key==='c'||e.key==='C')){
@@ -5370,12 +5485,16 @@ document.addEventListener('keydown',function(e){
   if(ctrl&&!e.altKey&&!e.shiftKey&&(e.key==='v'||e.key==='V')){
     if(sel||atelierClipboard){
       e.preventDefault();
-      if(navigator.clipboard?.readText){
+      // 앱 안에서 복사한 요소를 우선 사용합니다. 시스템 클립보드 접근은
+      // 파일 실행·권한·브라우저에 따라 실패할 수 있으므로 보조 경로로 둡니다.
+      if(atelierClipboard){
+        if(!pasteSelectedObject())toast('복사한 요소가 없어요');
+      }else if(navigator.clipboard?.readText){
         navigator.clipboard.readText().then(text=>{
           if(text.startsWith(OBJECT_CLIP_PREFIX))pasteSelectedObject(text);
-          else toast('일반 텍스트는 글을 더블클릭한 뒤 붙여넣어 주세요');
-        }).catch(()=>{if(!pasteSelectedObject())toast('복사한 요소가 없어요');});
-      }else if(!pasteSelectedObject())toast('복사한 요소가 없어요');
+          else toast('복사한 요소가 없어요 · 글자는 더블클릭해서 붙여넣으세요');
+        }).catch(()=>toast('복사한 요소가 없어요'));
+      }else toast('복사한 요소가 없어요');
     }
     return;
   }
